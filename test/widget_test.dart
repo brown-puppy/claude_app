@@ -1,30 +1,48 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:claude_app/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Empty state shows greeting', (WidgetTester tester) async {
+    await tester.pumpWidget(const ClaudeApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('How can I help you?'), findsOneWidget);
+    expect(find.text("Ask me anything — I'm here to assist."), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('Sending a message displays user bubble and Claude reply',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const ClaudeApp());
+
+    // Empty state should be visible before sending
+    expect(find.text('How can I help you?'), findsOneWidget);
+
+    // Type a message and send
+    await tester.enterText(find.byType(TextField), 'Hello');
+    await tester.tap(find.byType(FilledButton));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // User message bubble
+    expect(find.text('Hello'), findsOneWidget);
+
+    // Hardcoded Claude reply
+    expect(
+      find.textContaining("I'm Claude"),
+      findsOneWidget,
+    );
+
+    // Empty state should be gone
+    expect(find.text('How can I help you?'), findsNothing);
+  });
+
+  testWidgets('Empty input does not add messages', (WidgetTester tester) async {
+    await tester.pumpWidget(const ClaudeApp());
+
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+
+    // Empty state still shown — no messages added
+    expect(find.text('How can I help you?'), findsOneWidget);
   });
 }
