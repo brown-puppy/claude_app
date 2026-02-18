@@ -42,10 +42,281 @@ class ClaudeApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const ClaudeHomePage(),
+      home: const LandingPage(),
     );
   }
 }
+
+// ─── Landing Page ────────────────────────────────────────────────────────────
+
+class LandingPage extends StatefulWidget {
+  const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage>
+    with TickerProviderStateMixin {
+  late final AnimationController _bounceCtrl;
+  late final AnimationController _floatCtrl;
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _float;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _bounceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _scale = CurvedAnimation(parent: _bounceCtrl, curve: Curves.elasticOut);
+
+    _floatCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _float = Tween<double>(begin: -8.0, end: 8.0).animate(
+      CurvedAnimation(parent: _floatCtrl, curve: Curves.easeInOut),
+    );
+
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
+
+    _bounceCtrl.forward().then((_) {
+      if (mounted) _fadeCtrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _bounceCtrl.dispose();
+    _floatCtrl.dispose();
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  void _goToChat() {
+    Navigator.of(context).push(PageRouteBuilder<void>(
+      pageBuilder: (_, __, ___) => const ClaudeHomePage(),
+      transitionsBuilder: (_, anim, __, child) =>
+          FadeTransition(opacity: anim, child: child),
+      transitionDuration: const Duration(milliseconds: 400),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAF9F7),
+      body: Stack(
+        children: [
+          _buildSparkles(),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildFloatingLogo(),
+                  const SizedBox(height: 36),
+                  FadeTransition(
+                    opacity: _fade,
+                    child: _buildTextContent(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingLogo() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_bounceCtrl, _floatCtrl]),
+      builder: (_, child) => Transform.translate(
+        offset: Offset(0, _float.value),
+        child: Transform.scale(scale: _scale.value, child: child),
+      ),
+      child: Container(
+        width: 110,
+        height: 110,
+        decoration: BoxDecoration(
+          color: const Color(0xFFD97757),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD97757).withOpacity(0.35),
+              blurRadius: 24,
+              spreadRadius: 6,
+            ),
+          ],
+        ),
+        child: const Icon(Icons.auto_awesome, color: Colors.white, size: 52),
+      ),
+    );
+  }
+
+  Widget _buildTextContent() {
+    return Column(
+      children: [
+        const Text(
+          'Hi there! \u2728',
+          style: TextStyle(
+            fontSize: 34,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          "I'm Claude.\nYour curious, caring AI companion.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF6B6B6B),
+            height: 1.7,
+          ),
+        ),
+        const SizedBox(height: 48),
+        _LandingStartButton(onTap: _goToChat),
+        const SizedBox(height: 16),
+        const Text(
+          'always here \u00b7 always learning',
+          style: TextStyle(
+            fontSize: 12,
+            color: Color(0xFFBBBBBB),
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSparkles() {
+    const items = [
+      _SparkleItem(top: 85, left: 42, size: 16, opacity: 0.25),
+      _SparkleItem(top: 145, right: 55, size: 11, opacity: 0.18),
+      _SparkleItem(top: 250, left: 65, size: 20, opacity: 0.12),
+      _SparkleItem(right: 52, bottom: 165, size: 14, opacity: 0.22),
+      _SparkleItem(left: 58, bottom: 215, size: 18, opacity: 0.15),
+      _SparkleItem(top: 330, right: 72, size: 10, opacity: 0.28),
+    ];
+    return Stack(
+      children: items
+          .map(
+            (item) => Positioned(
+              top: item.top,
+              left: item.left,
+              right: item.right,
+              bottom: item.bottom,
+              child: AnimatedBuilder(
+                animation: _float,
+                builder: (_, __) => Transform.translate(
+                  offset: Offset(0, _float.value * 0.5),
+                  child: Opacity(
+                    opacity: item.opacity,
+                    child: Icon(
+                      Icons.auto_awesome,
+                      color: const Color(0xFFD97757),
+                      size: item.size,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _LandingStartButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _LandingStartButton({required this.onTap});
+
+  @override
+  State<_LandingStartButton> createState() => _LandingStartButtonState();
+}
+
+class _LandingStartButtonState extends State<_LandingStartButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+      lowerBound: 0.93,
+      upperBound: 1.0,
+      value: 1.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _ctrl.reverse(),
+      onTapUp: (_) {
+        _ctrl.forward();
+        widget.onTap();
+      },
+      onTapCancel: () => _ctrl.forward(),
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, child) =>
+            Transform.scale(scale: _ctrl.value, child: child),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD97757),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD97757).withOpacity(0.4),
+                blurRadius: 18,
+                offset: const Offset(0, 7),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Let's chat",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(width: 8),
+              Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Chat Page ────────────────────────────────────────────────────────────────
 
 class ClaudeHomePage extends StatefulWidget {
   const ClaudeHomePage({super.key});
@@ -233,6 +504,8 @@ class _ClaudeHomePageState extends State<ClaudeHomePage> {
   }
 }
 
+// ─── Data & Bubble ────────────────────────────────────────────────────────────
+
 class _Message {
   final String text;
   final bool isUser;
@@ -305,4 +578,21 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+class _SparkleItem {
+  final double? top, left, right, bottom;
+  final double size;
+  final double opacity;
+
+  const _SparkleItem({
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
+    required this.size,
+    required this.opacity,
+  });
 }
